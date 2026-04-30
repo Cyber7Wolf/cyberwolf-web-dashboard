@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberWolf Complete - 16 Features + Enterprise</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1a2e 100%);
+            color: #00ff88;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        
+        /* Login */
+        .login-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0a0e27;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .login-box {
+            background: #111;
+            border: 2px solid #00ff88;
+            border-radius: 15px;
+            padding: 40px;
+            width: 350px;
+            text-align: center;
+        }
+        .login-box input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            background: #000;
+            border: 1px solid #00ff88;
+            color: #00ff88;
+        }
+        .login-box button {
+            width: 100%;
+            padding: 10px;
+            background: #00ff88;
+            color: #000;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        /* Dashboard */
+        .dashboard { display: none; }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: rgba(0,0,0,0.6);
+            border: 1px solid #00ff88;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        .stat-value { font-size: 2em; font-weight: bold; }
+        
+        /* Section */
+        .section {
+            background: rgba(0,0,0,0.4);
+            padding: 15px;
+            margin: 20px 0 15px 0;
+            border-left: 4px solid #00ff88;
+        }
+        .section h2 { font-size: 1.2em; margin-bottom: 15px; }
+        
+        /* Button Grids - ALL 16 FEATURES */
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+        }
+        button {
+            background: linear-gradient(135deg, #00ff88 0%, #00aa55 100%);
+            color: #000;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        button:hover { transform: scale(1.02); }
+        .danger { background: linear-gradient(135deg, #ff4444 0%, #aa0000 100%); color: #fff; }
+        .warning { background: linear-gradient(135deg, #ffaa00 0%, #aa6600 100%); }
+        
+        /* Status Cards */
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .status-card {
+            background: rgba(0,0,0,0.6);
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 15px;
+        }
+        .badge-active { color: #00ff88; }
+        .badge-inactive { color: #ff4444; }
+        
+        /* Attack Map */
+        .attack-list {
+            background: rgba(0,0,0,0.6);
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 15px;
+            height: 200px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        .attack-item {
+            padding: 8px;
+            border-bottom: 1px solid #222;
+            font-size: 0.85em;
+        }
+        .severity-Critical { color: #ff0000; font-weight: bold; }
+        .severity-High { color: #ff4444; }
+        .severity-Medium { color: #ffaa00; }
+        
+        /* Logs */
+        .logs {
+            background: rgba(0,0,0,0.8);
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 15px;
+            height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+            font-size: 12px;
+        }
+        .log-entry { padding: 4px; border-bottom: 1px solid #222; }
+        
+        @media (max-width: 768px) {
+            .button-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-container" id="loginScreen">
+    <div class="login-box">
+        <h1>🐺 CYBERWOLF</h1>
+        <h3>Security Platform</h3>
+        <input type="text" id="username" placeholder="Username" value="cyberwolf">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">🔓 Login</button>
+        <p style="margin-top: 15px; font-size: 11px;">cyberwolf / CyberWolf2024!</p>
+    </div>
+</div>
+
+<div class="dashboard" id="dashboard">
+    <div class="container">
+        <h1 style="text-align: center;">🐺 CYBERWOLF - 16 FEATURES + ENTERPRISE</h1>
+        
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card"><div class="stat-value" id="cpu">--</div><div>CPU</div></div>
+            <div class="stat-card"><div class="stat-value" id="ram">--</div><div>RAM</div></div>
+            <div class="stat-card"><div class="stat-value" id="disk">--</div><div>Disk</div></div>
+            <div class="stat-card"><div class="stat-value" id="score">--</div><div>Security Score</div></div>
+        </div>
+        
+        <!-- Status -->
+        <div class="status-grid">
+            <div class="status-card"><strong>🛡️ Tor</strong><br><span id="torStatus">Checking...</span></div>
+            <div class="status-card"><strong>🖥️ MAC</strong><br><span id="macStatus">Loading...</span></div>
+            <div class="status-card"><strong>🌐 Connections</strong><br><span id="connStatus">0</span></div>
+        </div>
+        
+        <!-- Attack Map -->
+        <div class="attack-list"><strong>🌍 LIVE ATTACK MAP</strong><div id="attackList"></div></div>
+        
+        <!-- ========== ALL 16 FEATURES BUTTONS ========== -->
+        
+        <!-- Section 1: STANDARD OPSEC (4) -->
+        <div class="section"><h2>🛡️ STANDARD OPSEC (4)</h2></div>
+        <div class="button-grid">
+            <button onclick="callAction('tor_start')">🌐 Start Tor</button>
+            <button onclick="callAction('tor_stop')">⛔ Stop Tor</button>
+            <button onclick="callAction('mac_spoof')">🔄 Spoof MAC</button>
+            <button onclick="callAction('clear_logs')">🗑️ Anti-Forensics</button>
+        </div>
+        
+        <!-- Section 2: AI-POWERED (3) -->
+        <div class="section"><h2>🤖 AI-POWERED (3)</h2></div>
+        <div class="button-grid">
+            <button onclick="callAction('ai_threat')">📊 Threat Assessment</button>
+            <button onclick="callAction('ai_recommend')">💡 AI Recommendation</button>
+            <button onclick="callAction('auto_defend')">🛡️ Auto-Defend</button>
+        </div>
+        
+        <!-- Section 3: FUTURE TECH (5) -->
+        <div class="section"><h2>🚀 FUTURE TECH (5)</h2></div>
+        <div class="button-grid">
+            <button onclick="callAction('quantum')">⚛️ Quantum Encryption</button>
+            <button onclick="callAction('darkweb')">🕳️ Dark Web Monitor</button>
+            <button onclick="callAction('behavioral')">🎭 Behavioral Analysis</button>
+            <button onclick="callAction('predictive')">🔮 Predictive Defense</button>
+            <button onclick="callAction('obfuscate')">🌊 Traffic Obfuscation</button>
+        </div>
+        
+        <!-- Section 4: PRESET MODES (2) -->
+        <div class="section"><h2>⚡ PRESET MODES (2)</h2></div>
+        <div class="button-grid">
+            <button class="warning" onclick="callAction('quick_protect')">⚡ Quick Protect</button>
+            <button class="warning" onclick="callAction('max_protect')">🔒 Maximum Protection</button>
+        </div>
+        
+        <!-- Section 5: UTILITIES (2) -->
+        <div class="section"><h2>📊 UTILITIES (2)</h2></div>
+        <div class="button-grid">
+            <button onclick="callAction('status_report')">📋 Status Report</button>
+            <button class="danger" onclick="if(confirm('EMERGENCY? Type WOLF')) callAction('emergency')">🚨 EMERGENCY PANIC</button>
+        </div>
+        
+        <!-- Activity Log -->
+        <div class="logs"><strong>📋 ACTIVITY LOG</strong><div id="log"></div></div>
+    </div>
+</div>
+
+<script>
+    let socket = null;
+    
+    function addLog(msg, type = 'info') {
+        const logDiv = document.getElementById('log');
+        const entry = document.createElement('div');
+        entry.className = 'log-entry';
+        entry.style.color = type === 'error' ? '#ff4444' : '#aaa';
+        entry.innerHTML = `[${new Date().toLocaleTimeString()}] ${msg}`;
+        logDiv.insertBefore(entry, logDiv.firstChild);
+        while(logDiv.children.length > 40) logDiv.removeChild(logDiv.lastChild);
+    }
+    
+    async function login() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        try {
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                initDashboard();
+                addLog('Connected to CyberWolf Platform - 16 Features Ready', 'info');
+            } else {
+                alert('Invalid credentials');
+            }
+        } catch(e) { alert('Login failed'); }
+    }
+    
+    function initDashboard() {
+        socket = io();
+        socket.on('connect', () => addLog('WebSocket connected', 'info'));
+        socket.on('metrics_update', (data) => {
+            document.getElementById('cpu').textContent = data.cpu + '%';
+            document.getElementById('ram').textContent = data.ram + '%';
+            document.getElementById('disk').textContent = data.disk + '%';
+            document.getElementById('connStatus').textContent = data.connections;
+        });
+        socket.on('status_update', (data) => {
+            const torSpan = document.getElementById('torStatus');
+            torSpan.innerHTML = data.tor ? '<span class="badge-active">✅ ACTIVE</span>' : '<span class="badge-inactive">❌ INACTIVE</span>';
+            document.getElementById('macStatus').textContent = data.mac_current;
+            document.getElementById('score').textContent = data.security_score;
+        });
+        socket.on('new_attack', (attack) => {
+            const attackDiv = document.getElementById('attackList');
+            const entry = document.createElement('div');
+            entry.className = `attack-item severity-${attack.severity}`;
+            entry.innerHTML = `⚠️ ${attack.attack_type} from ${attack.country} (${attack.city}) - ${attack.status}`;
+            attackDiv.insertBefore(entry, attackDiv.firstChild);
+            while(attackDiv.children.length > 10) attackDiv.removeChild(attackDiv.lastChild);
+            addLog(`🚨 Attack blocked: ${attack.attack_type} from ${attack.country}`, 'warning');
+        });
+        socket.on('action_log', (data) => addLog(`${data.action}: ${data.result}`, 'info'));
+        updateStatus();
+        setInterval(updateStatus, 10000);
+    }
+    
+    async function updateStatus() {
+        try {
+            const res = await fetch('/api/status', {
+                headers: { 'Authorization': 'Basic ' + btoa('cyberwolf:CyberWolf2024!') }
+            });
+            const data = await res.json();
+            if (data.events) {
+                const attackDiv = document.getElementById('attackList');
+                attackDiv.innerHTML = '';
+                data.events.slice(0,8).forEach(e => {
+                    const div = document.createElement('div');
+                    div.className = `attack-item severity-${e.severity}`;
+                    div.innerHTML = `⚠️ ${e.attack_type} from ${e.country}`;
+                    attackDiv.appendChild(div);
+                });
+            }
+        } catch(e) {}
+    }
+    
+    async function callAction(action) {
+        addLog(`Executing: ${action}`, 'info');
+        try {
+            const res = await fetch(`/api/action/${action}`, {
+                method: 'POST',
+                headers: { 'Authorization': 'Basic ' + btoa('cyberwolf:CyberWolf2024!') }
+            });
+            const data = await res.json();
+            addLog(`✅ ${data.message}`, 'info');
+        } catch(e) { addLog(`❌ Error: ${e.message}`, 'error'); }
+    }
+</script>
+</body>
+</html>

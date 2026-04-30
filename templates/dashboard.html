@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberWolf OPSEC - Advanced Security Dashboard</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1a2e 100%);
+            color: #00ff88;
+            min-height: 100vh;
+        }
+        
+        /* Login Screen */
+        .login-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1a2e 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        
+        .login-box {
+            background: rgba(0,0,0,0.8);
+            border: 2px solid #00ff88;
+            border-radius: 15px;
+            padding: 40px;
+            width: 350px;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(0,255,136,0.2);
+        }
+        
+        .login-box h1 { margin-bottom: 30px; font-size: 2em; }
+        .login-box input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        .login-box button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 20px;
+            background: #00ff88;
+            color: #0a0e27;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        /* Main Dashboard */
+        .dashboard { display: none; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 20px;
+            border-bottom: 2px solid #00ff88;
+            margin-bottom: 30px;
+        }
+        .header h1 { font-size: 2.5em; text-shadow: 0 0 10px #00ff88; }
+        .header p { color: #888; margin-top: 10px; }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: rgba(0,0,0,0.6);
+            border: 1px solid #00ff88;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(0,255,136,0.3); }
+        .stat-value { font-size: 2em; font-weight: bold; }
+        .stat-label { color: #aaa; font-size: 0.8em; margin-top: 5px; }
+        
+        /* Status Cards */
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .status-card {
+            background: rgba(0,0,0,0.6);
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 15px;
+        }
+        .indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .active { background: #00ff88; box-shadow: 0 0 5px #00ff88; animation: pulse 2s infinite; }
+        .inactive { background: #ff4444; }
+        
+        /* Section Styling */
+        .section {
+            background: rgba(0,0,0,0.4);
+            padding: 15px;
+            margin: 20px 0 15px 0;
+            border-left: 4px solid #00ff88;
+        }
+        .section h2 { font-size: 1.2em; margin-bottom: 15px; }
+        
+        /* Button Grids */
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px;
+        }
+        button {
+            background: linear-gradient(135deg, #00ff88 0%, #00aa55 100%);
+            color: #0a0e27;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        button:hover { transform: scale(1.02); box-shadow: 0 0 15px rgba(0,255,136,0.3); }
+        .danger { background: linear-gradient(135deg, #ff4444 0%, #aa0000 100%); color: white; }
+        .warning { background: linear-gradient(135deg, #ffaa00 0%, #aa6600 100%); color: black; }
+        
+        /* Logs */
+        .logs-section {
+            background: rgba(0,0,0,0.8);
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 15px;
+            height: 250px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        .log-entry { font-size: 11px; padding: 5px; border-bottom: 1px solid #222; color: #aaa; }
+        .log-info { color: #00ff88; }
+        .log-warning { color: #ffaa00; }
+        .log-error { color: #ff4444; }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 { font-size: 1.5em; }
+            .button-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div class="login-container" id="loginScreen">
+    <div class="login-box">
+        <h1>🐺 CYBERWOLF OPSEC</h1>
+        <h3>Advanced Security Dashboard</h3>
+        <input type="text" id="username" placeholder="Username" value="cyberwolf">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">🔓 Authenticate</button>
+        <p style="margin-top: 15px; font-size: 12px; color: #666;">Default: cyberwolf / CyberWolf2024!</p>
+    </div>
+</div>
+
+<!-- Main Dashboard -->
+<div class="dashboard" id="dashboard">
+    <div class="container">
+        <div class="header">
+            <h1>🐺 CYBERWOLF OPSEC - ADVANCED</h1>
+            <p>Professional Security Orchestration Platform | 16 Active Features</p>
+            <p style="font-size: 12px;">Threat Level: <span id="threatBadge">LOW</span></p>
+        </div>
+        
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card"><div class="stat-value" id="cpu">--</div><div class="stat-label">CPU</div></div>
+            <div class="stat-card"><div class="stat-value" id="ram">--</div><div class="stat-label">RAM</div></div>
+            <div class="stat-card"><div class="stat-value" id="disk">--</div><div class="stat-label">Disk</div></div>
+            <div class="stat-card"><div class="stat-value" id="connections">--</div><div class="stat-label">Connections</div></div>
+            <div class="stat-card"><div class="stat-value" id="temp">--</div><div class="stat-label">Temperature</div></div>
+        </div>
+        
+        <!-- Status -->
+        <div class="status-grid">
+            <div class="status-card"><h3>🛡️ Tor Status</h3><div id="torStatus"></div></div>
+            <div class="status-card"><h3>🖥️ MAC Address</h3><div id="macStatus"></div></div>
+            <div class="status-card"><h3>🕒 Last Protect</h3><div id="lastProtect">Never</div></div>
+            <div class="status-card"><h3>💻 Hostname</h3><div id="hostname">--</div></div>
+        </div>
+        
+        <!-- Section 1 -->
+        <div class="section"><h2>🛡️ STANDARD OPSEC (4)</h2></div>
+        <div class="button-grid">
+            <button onclick="action('tor_start')">🌐 Start Tor</button>
+            <button onclick="action('tor_stop')">⛔ Stop Tor</button>
+            <button onclick="action('mac_spoof')">🔄 Spoof MAC</button>
+            <button onclick="action('clear_logs')">🗑️ Anti-Forensics</button>
+        </div>
+        
+        <!-- Section 2 -->
+        <div class="section"><h2>🤖 AI-POWERED (3)</h2></div>
+        <div class="button-grid">
+            <button onclick="action('ai_threat')">📊 Threat Assessment</button>
+            <button onclick="action('ai_recommend')">💡 AI Recommendation</button>
+            <button onclick="action('auto_defend')">🛡️ Auto-Defend</button>
+        </div>
+        
+        <!-- Section 3 -->
+        <div class="section"><h2>🚀 FUTURE TECH (5)</h2></div>
+        <div class="button-grid">
+            <button onclick="action('quantum')">⚛️ Quantum Encryption</button>
+            <button onclick="action('darkweb')">🕳️ Dark Web Monitor</button>
+            <button onclick="action('behavioral')">🎭 Behavioral Analysis</button>
+            <button onclick="action('predictive')">🔮 Predictive Defense</button>
+            <button onclick="action('obfuscate')">🌊 Traffic Obfuscation</button>
+        </div>
+        
+        <!-- Section 4 -->
+        <div class="section"><h2>⚡ PRESET MODES (2)</h2></div>
+        <div class="button-grid">
+            <button class="warning" onclick="action('quick_protect')">⚡ Quick Protect</button>
+            <button class="warning" onclick="action('max_protect')">🔒 Maximum Protection</button>
+        </div>
+        
+        <!-- Section 5 -->
+        <div class="section"><h2>📊 UTILITIES (2)</h2></div>
+        <div class="button-grid">
+            <button onclick="action('status_report')">📋 Status Report</button>
+            <button class="danger" onclick="if(confirm('EMERGENCY? Type WOLF')) action('emergency')">🚨 EMERGENCY PANIC</button>
+        </div>
+        
+        <!-- Logs -->
+        <div class="logs-section">
+            <h3>📋 Activity Log</h3>
+            <div id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let socket = null;
+    
+    function addLog(msg, type = 'info') {
+        const logDiv = document.getElementById('log');
+        const entry = document.createElement('div');
+        entry.className = `log-entry log-${type}`;
+        entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+        logDiv.insertBefore(entry, logDiv.firstChild);
+        while(logDiv.children.length > 50) logDiv.removeChild(logDiv.lastChild);
+    }
+    
+    async function login() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        
+        try {
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                initDashboard();
+                addLog('Authentication successful - Welcome CyberWolf', 'info');
+            } else {
+                alert('Invalid credentials');
+            }
+        } catch(e) {
+            alert('Login failed: ' + e.message);
+        }
+    }
+    
+    function initDashboard() {
+        // Connect WebSocket
+        socket = io();
+        
+        socket.on('connect', () => addLog('WebSocket connected', 'info'));
+        socket.on('metrics_update', (data) => {
+            document.getElementById('cpu').textContent = data.cpu + '%';
+            document.getElementById('ram').textContent = data.ram + '%';
+            document.getElementById('disk').textContent = data.disk + '%';
+            document.getElementById('connections').textContent = data.connections;
+            document.getElementById('temp').textContent = data.temperature + '°C';
+        });
+        
+        socket.on('status_update', (data) => {
+            const torDiv = document.getElementById('torStatus');
+            torDiv.innerHTML = data.tor ? '<span class="indicator active"></span> ACTIVE' : '<span class="indicator inactive"></span> INACTIVE';
+            document.getElementById('macStatus').textContent = data.mac_current || 'Unknown';
+            document.getElementById('hostname').textContent = data.hostname || 'Unknown';
+            document.getElementById('threatBadge').textContent = data.threat_level;
+            document.getElementById('lastProtect').textContent = data.last_protect ? new Date(data.last_protect).toLocaleTimeString() : 'Never';
+            
+            // Change threat badge color
+            const badge = document.getElementById('threatBadge');
+            if (data.threat_level === 'CRITICAL') badge.style.color = '#ff4444';
+            else if (data.threat_level === 'HIGH') badge.style.color = '#ffaa00';
+            else badge.style.color = '#00ff88';
+        });
+        
+        socket.on('action_log', (data) => {
+            addLog(`Action: ${data.action} | ${data.result}`, 'info');
+        });
+        
+        updateStatus();
+        setInterval(updateStatus, 5000);
+    }
+    
+    async function updateStatus() {
+        try {
+            const res = await fetch('/api/status', {
+                headers: { 'Authorization': 'Basic ' + btoa('cyberwolf:CyberWolf2024!') }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('cpu').textContent = data.metrics.cpu + '%';
+                document.getElementById('ram').textContent = data.metrics.ram + '%';
+                document.getElementById('disk').textContent = data.metrics.disk + '%';
+                document.getElementById('connections').textContent = data.metrics.connections;
+            }
+        } catch(e) {}
+    }
+    
+    async function action(cmd) {
+        addLog(`Executing: ${cmd}`, 'info');
+        try {
+            const res = await fetch(`/api/action/${cmd}`, {
+                method: 'POST',
+                headers: { 'Authorization': 'Basic ' + btoa('cyberwolf:CyberWolf2024!') }
+            });
+            const data = await res.json();
+            addLog(`✅ ${data.message}`, 'info');
+        } catch(e) {
+            addLog(`❌ Error: ${e.message}`, 'error');
+        }
+    }
+    
+    // Prevent accidental logout
+    window.onbeforeunload = function() {
+        return "Dashboard running. Are you sure?";
+    };
+</script>
+</body>
+</html>
