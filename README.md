@@ -1,5 +1,12 @@
 # 🐺 CyberWolf Ultimate Security Platform
 
+## 🔐 LOGIN CREDENTIALS
+Username: cyberwolf
+Password: CyberWolf2024!
+
+
+---
+
 A professional, real-time security dashboard with 16 OPSEC features.
 
 ## Features
